@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hdfs-csi-plugin
+description: Helm chart pour déployer le plugin HDFS CSI sur Kubernetes.
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

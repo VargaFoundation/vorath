@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: csi-plugin
+
+hdfs:
+  url: ${HDFS_URL:hdfs://namenode:8020} # Priorise la variable d'env HDFS_URL ou utilise une valeur par défaut
+  user: ${HDFS_USER:hdfs_user}
