@@ -1,0 +1,37 @@
+Thank you for installing the HDFS CSI plugin!
+
+The HDFS CSI plugin is now successfully deployed on your Kubernetes cluster.
+
+### Verifying the Deployment
+1. Check the status of the HDFS CSI components:
+   ```
+   kubectl get pods -n {{ .Release.Namespace }}
+   ```
+
+2. View logs from the CSI Controller (Deployment):
+   ```
+   kubectl logs -l app=hdfs-csi-plugin -n {{ .Release.Namespace }}
+   ```
+
+3. For Node-specific operations (if a DaemonSet is used), view logs:
+   ```
+   kubectl logs -l app=hdfs-node-plugin -n {{ .Release.Namespace }}
+   ```
+
+### Post-Installation Usage
+- To validate the CSI Driver is registered, run:
+  ```
+  kubectl get csidrivers.storage.k8s.io
+  ```
+
+- Verify volume attachment and lifecycle operations:
+  - Create a PersistentVolumeClaim (PVC) associated with this driver.
+  - Ensure the PVC is bound correctly and accessible to your workloads.
+
+### Important Notes
+- **CSI Endpoint**: The CSI gRPC server listens on the endpoint `unix:///csi/csi.sock`.
+- If you encounter any issues, please refer to the Kubernetes CSI logs and documentation for troubleshooting.
+
+For further details and operational documentation, refer to the official repository or contact the project maintainers.
+
+Thank you for choosing the HDFS CSI plugin!

@@ -1,48 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-hdfs-csi-plugin
-  labels:
-    app: {{ .Chart.Name }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+  name: hdfs-csi-plugin
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
-      release: {{ .Release.Name }}
+      app: hdfs-csi-plugin
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
-        release: {{ .Release.Name }}
+        app: hdfs-csi-plugin
     spec:
+      serviceAccountName: hdfs-csi-sa
       containers:
         - name: hdfs-csi-plugin
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: HDFS_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Release.Name }}-hdfs-config
-                  key: HDFS_URL
-            - name: HDFS_USER
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Release.Name }}-hdfs-config
-                  key: HDFS_USER
-          resources:
-            requests:
-              memory: {{ .Values.resources.requests.memory }}
-              cpu: {{ .Values.resources.requests.cpu }}
-            limits:
-              memory: {{ .Values.resources.limits.memory }}
-              cpu: {{ .Values.resources.limits.cpu }}
+            - name: CSI_ENDPOINT
+              value: "unix:///csi/csi.sock"
           ports:
-            - containerPort: {{ .Values.service.port }}
-      nodeSelector: {{- toYaml .Values.nodeSelector | nindent 6 }}
-      tolerations: {{- toYaml .Values.tolerations | nindent 6 }}
-      affinity: {{- toYaml .Values.affinity | nindent 6 }}
+            - name: grpc
+              containerPort: {{ .Values.grpcPort }}
+              protocol: TCP
+          volumeMounts:
+            - name: csi-socket-dir
+              mountPath: /csi
+      volumes:
+        - name: csi-socket-dir
+          emptyDir: {}
+      affinity: {{ toYaml .Values.affinity | nindent 8 }}
+      nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
+      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
