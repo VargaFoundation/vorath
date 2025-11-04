@@ -7,27 +7,32 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Kubernetes CSI</name>
-    <description>Un projet Java pour implémenter un CSI compatible Kubernetes.</description>
+    <name>HDFS CSI Plugin</name>
 
     <properties>
+        <java.version>17</java.version>
+        <spring-boot.version>3.1.4</spring-boot.version>
     </properties>
 
     <dependencies>
 
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>6.0.11</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>${spring-boot.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
-            <version>6.0.11</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <version>${spring-boot.version}</version>
         </dependency>
 
-
-        <!-- Dépendances requises pour Kubernetes -->
         <dependency>
             <groupId>io.kubernetes</groupId>
             <artifactId>client-java</artifactId>
@@ -57,21 +62,25 @@
             <version>3.25.8</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.30</version>
+            <scope>provided</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
-            <version>3.3.0</version> <!-- Adaptez selon votre version d'Hadoop -->
+            <version>3.3.0</version>
         </dependency>
 
-        <!-- Jackson pour la gestion du JSON -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.15.3</version>
         </dependency>
 
-        <!-- SLF4J pour la journalisation -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -105,7 +114,6 @@
 <!--                    <outputDirectory>${project.build.directory}/generated-sources/protobuf/java</outputDirectory>-->
 <!--                </configuration>-->
                 <executions>
-                    <!-- Génération des classes Java à partir des fichiers Protobuf -->
                     <execution>
                         <id>generate-protobuf-classes</id>
                         <phase>generate-sources</phase>
@@ -119,7 +127,6 @@
                         </configuration>
                     </execution>
 
-                    <!-- Génération des classes stubs pour gRPC -->
                     <execution>
                         <id>generate-grpc-classes</id>
                         <phase>generate-sources</phase>
@@ -164,11 +171,15 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                    <generatedSourcesDirectory>${project.build.directory}/generated-sources/protobuf/java
-                    </generatedSourcesDirectory>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
             </plugin>
 
         </plugins>
