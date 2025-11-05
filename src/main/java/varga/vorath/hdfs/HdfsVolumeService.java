@@ -10,12 +10,40 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Service
 public class HdfsVolumeService {
 
     private static final Logger logger = LoggerFactory.getLogger(HdfsVolumeService.class);
     private final FileSystem hdfs;
+
+    // Simulated state store
+    private final ConcurrentMap<String, String> volumeNodeBindings = new ConcurrentHashMap<>();
+
+    /**
+     * Checks whether the volume is already published to the given node.
+     *
+     * @param volumeId The ID of the volume.
+     * @param nodeId   The ID of the node.
+     * @return true if the volume is already published to the node, false otherwise.
+     */
+    public boolean isAlreadyPublished(String volumeId, String nodeId) {
+        String boundNodeId = volumeNodeBindings.get(volumeId);
+        return nodeId.equals(boundNodeId);
+    }
+
+    /**
+     * Marks a volume as published to a specific node.
+     *
+     * @param volumeId The ID of the volume.
+     * @param nodeId   The ID of the node.
+     */
+    public void markVolumeAsPublished(String volumeId, String nodeId) {
+        logger.info("Marking volume '{}' as published to node '{}'.", volumeId, nodeId);
+        volumeNodeBindings.put(volumeId, nodeId); // Bind volume to the node
+    }
 
     public HdfsVolumeService(@Value("${hdfs.url}") String hdfsUrl,
                              @Value("${hdfs.user}") String hdfsUser) throws IOException, InterruptedException {

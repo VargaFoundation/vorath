@@ -30,15 +30,44 @@ public class ControllerPublishVolumeHandler {
         String volumeId = request.getVolumeId();
         String nodeId = request.getNodeId();
 
-        logger.info("Handling ControllerPublishVolume for Volume ID: {}, Node ID: {}", volumeId, nodeId);
+        if (volumeId == null || volumeId.isEmpty()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT.withDescription("Volume ID is missing").asRuntimeException());
+            return;
+        }
+        if (nodeId == null || nodeId.isEmpty()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT.withDescription("Node ID is missing").asRuntimeException());
+            return;
+        }
 
         try {
-            // Check if the volume exists in HDFS
+            // Vérifie si le volume existe
             if (!hdfsVolumeService.volumeExists(volumeId)) {
                 throw new IllegalArgumentException("Volume with ID '" + volumeId + "' does not exist in HDFS.");
             }
+        } catch (IOException e) {
+            logger.error("Error accessing HDFS for volume '{}': {}", volumeId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription("Internal error accessing HDFS: " + e.getMessage())
+                    .asRuntimeException());
+        }
 
-            // Simulate binding the volume to the node (could involve updating metadata, etc.)
+        logger.info("Handling ControllerPublishVolume for Volume ID: {}, Node ID: {}", volumeId, nodeId);
+
+        if (hdfsVolumeService.isAlreadyPublished(volumeId, nodeId)) {
+            logger.warn("Volume '{}' is already published to Node '{}', skipping.", volumeId, nodeId);
+            responseObserver.onNext(Csi.ControllerPublishVolumeResponse.newBuilder().build());
+            responseObserver.onCompleted();
+            return;
+        }
+
+        try {
+
+            logger.info("Publishing volume '{}' to Node '{}'.", volumeId, nodeId);
+
+            // TODO Simulate binding the volume to the node (could involve updating metadata, etc.)
+
+            this.hdfsVolumeService.markVolumeAsPublished(volumeId, nodeId);
+
             logger.info("Volume '{}' successfully published to Node '{}'.", volumeId, nodeId);
 
             // Send a successful response

@@ -2,25 +2,24 @@ package varga.vorath.controller;
 
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import varga.vorath.hdfs.HdfsVolumeService;
+import varga.vorath.kubernetes.KubernetesVolumeService;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class CreateVolumeRequestHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(CreateVolumeRequestHandler.class);
 
-    private final Map<String, Csi.Volume> volumeStore = new HashMap<>();
     private final HdfsVolumeService hdfsVolumeService;
-
-    public CreateVolumeRequestHandler(HdfsVolumeService hdfsVolumeService) {
-        this.hdfsVolumeService = hdfsVolumeService;
-    }
+    private final KubernetesVolumeService kubernetesVolumeService;
 
     public void handleCreateVolume(Csi.CreateVolumeRequest request,
                                    StreamObserver<Csi.CreateVolumeResponse> responseObserver) {
@@ -38,33 +37,39 @@ public class CreateVolumeRequestHandler {
             }
 
             // Check if a volume with the same name already exists
-            if (volumeStore.containsKey(volumeName)) {
-                Csi.Volume existingVolume = volumeStore.get(volumeName);
+            if (kubernetesVolumeService.getPersistentVolumeByName(volumeName).isPresent()) {
+                logger.info("Volume '{}' already exists, returning existing volume.", volumeName);
+                Csi.Volume existingVolume = kubernetesVolumeService.buildCsiVolumeFromPersistentVolume(volumeName);
                 Csi.CreateVolumeResponse response = Csi.CreateVolumeResponse.newBuilder()
                         .setVolume(existingVolume)
                         .build();
-
                 responseObserver.onNext(response);
                 responseObserver.onCompleted();
-                logger.info("Returning existing volume: {}", volumeName);
                 return;
             }
 
             // Delegate HDFS logic to HdfsVolumeService
-            hdfsVolumeService.createVolume(volumeName);
+            this.hdfsVolumeService.createVolume(volumeName);
 
-            // Create volume metadata and store it
+            // Generate the HDFS path and metadata
             String volumeId = "vol-" + System.currentTimeMillis();
+            String hdfsPath = "/volumes/" + volumeName;
+            Map<String, String> volumeContext = Map.of(
+                    "hdfsPath", hdfsPath,
+                    "storageClass", request.getParametersMap().getOrDefault("storageClass", "default")
+            );
+
+            // Create the PersistentVolume in Kubernetes
+            this.kubernetesVolumeService.createPersistentVolume(volumeId, volumeName, hdfsPath, requiredBytes, volumeContext);
+
+
+            // Create the response
             Csi.Volume newVolume = Csi.Volume.newBuilder()
                     .setVolumeId(volumeId)
                     .setCapacityBytes(requiredBytes)
-                    .putVolumeContext("storageClass", request.getParametersMap().getOrDefault("storageClass", "default"))
-                    .putVolumeContext("hdfsPath", "/volumes/" + volumeName)
+                    .putAllVolumeContext(volumeContext)
                     .build();
 
-            volumeStore.put(volumeName, newVolume);
-
-            // Send the response
             Csi.CreateVolumeResponse response = Csi.CreateVolumeResponse.newBuilder()
                     .setVolume(newVolume)
                     .build();
