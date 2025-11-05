@@ -128,5 +128,3 @@ public class HdfsMountService {
         logger.info("Stale mount cleanup completed.");
     }
 }
-
-}
