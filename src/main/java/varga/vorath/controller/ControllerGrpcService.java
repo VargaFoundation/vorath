@@ -13,16 +13,20 @@ public class ControllerGrpcService extends ControllerGrpc.ControllerImplBase {
 
     private final CreateVolumeRequestHandler createVolumeRequestHandler;
     private final DeleteVolumeRequestHandler deleteVolumeRequestHandler;
-    private final ControllerUnpublishVolumeHandler controllerUnpublishVolumeHandler;
-    private final ControllerPublishVolumeHandler controllerPublishVolumeHandler;
     private final GetCapacityHandler getCapacityHandler;
     private final ListVolumesHandler listVolumesHandler;
     private final ValidateVolumeCapabilitiesHandler validateVolumeCapabilitiesHandler;
+    private final ControllerGetCapabilitiesRequestHandler controllerGetCapabilitiesRequestHandler;
+
+    @Override
+    public void controllerGetCapabilities(csi.v1.Csi.ControllerGetCapabilitiesRequest request, StreamObserver<csi.v1.Csi.ControllerGetCapabilitiesResponse> responseObserver) {
+        this.controllerGetCapabilitiesRequestHandler.handleControllerGetCapabilities(request, responseObserver);
+    }
 
     @Override
     public void createVolume(Csi.CreateVolumeRequest request,
                              StreamObserver<Csi.CreateVolumeResponse> responseObserver) {
-        this.createVolumeRequestHandler.handleCreateVolume(request, responseObserver);
+        this.createVolumeRequestHandler.handleCreateVolumeRequest(request, responseObserver);
 
     }
 
@@ -42,15 +46,15 @@ public class ControllerGrpcService extends ControllerGrpc.ControllerImplBase {
         this.getCapacityHandler.handleGetCapacity(request, responseObserver);
     }
 
-    @Override
-    public void controllerUnpublishVolume(Csi.ControllerUnpublishVolumeRequest request, StreamObserver<Csi.ControllerUnpublishVolumeResponse> responseObserver) {
-        this.controllerUnpublishVolumeHandler.handleControllerUnpublishVolume(request, responseObserver);
-    }
-
-    @Override
-    public void controllerPublishVolume(Csi.ControllerPublishVolumeRequest request, StreamObserver<Csi.ControllerPublishVolumeResponse> responseObserver) {
-        this.controllerPublishVolumeHandler.handleControllerPublishVolume(request, responseObserver);
-    }
+//    @Override
+//    public void controllerUnpublishVolume(Csi.ControllerUnpublishVolumeRequest request, StreamObserver<Csi.ControllerUnpublishVolumeResponse> responseObserver) {
+//        this.controllerUnpublishVolumeHandler.handleControllerUnpublishVolume(request, responseObserver);
+//    }
+//
+//    @Override
+//    public void controllerPublishVolume(Csi.ControllerPublishVolumeRequest request, StreamObserver<Csi.ControllerPublishVolumeResponse> responseObserver) {
+//        this.controllerPublishVolumeHandler.handleControllerPublishVolume(request, responseObserver);
+//    }
 
     @Override
     public void validateVolumeCapabilities(Csi.ValidateVolumeCapabilitiesRequest request, StreamObserver<Csi.ValidateVolumeCapabilitiesResponse> responseObserver) {

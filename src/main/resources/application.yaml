@@ -1,11 +1,10 @@
 spring:
   application:
-    name: csi-plugin
+    name: hdfs-csi-plugin
 
-grpc:
-  server:
-    port: 50051
-
-hdfs:
-  url: ${HDFS_URL:hdfs://namenode:8020} # Priorise la variable d'env HDFS_URL ou utilise une valeur par défaut
-  user: ${HDFS_USER:hdfs_user}
+csi:
+  plugin:
+    name: "hdfs.csi.varga"
+    vendorVersion: "1.0.0"
+    manifest:
+      description: "A CSI plugin for HDFS"

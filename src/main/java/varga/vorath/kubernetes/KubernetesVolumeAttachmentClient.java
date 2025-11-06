@@ -1,4 +1,4 @@
-package varga.vorath.hdfs;
+package varga.vorath.kubernetes;
 
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -10,6 +10,7 @@ import io.kubernetes.client.util.ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import varga.vorath.hdfs.VolumeAttachmentInfo;
 
 import java.io.IOException;
 import java.util.HashMap;

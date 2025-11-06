@@ -2,16 +2,20 @@ package varga.vorath.node;
 
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import varga.vorath.hdfs.HdfsConnection;
 import varga.vorath.hdfs.HdfsMountService;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Base64;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -24,14 +28,15 @@ public class NodePublishVolumeHandler {
     /**
      * Handles the NodePublishVolume request.
      *
-     * @param request           The request for publishing the volume.
-     * @param responseObserver  The observer to send the response to the client.
+     * @param request          The request for publishing the volume.
+     * @param responseObserver The observer to send the response to the client.
      */
     public void handleNodePublishVolume(Csi.NodePublishVolumeRequest request,
                                         StreamObserver<Csi.NodePublishVolumeResponse> responseObserver) {
+
         String volumeId = request.getVolumeId();
         String targetPath = request.getTargetPath();
-        String hdfsPath = request.getVolumeContextMap().get("hdfsPath");
+        Map<String, String> volumeContext = request.getVolumeContextMap();
 
         if (volumeId == null || volumeId.isEmpty()) {
             throw new IllegalArgumentException("Volume ID is missing.");
@@ -41,9 +46,47 @@ public class NodePublishVolumeHandler {
             throw new IllegalArgumentException("Target path is missing.");
         }
 
-        if (!request.getVolumeContextMap().containsKey("hdfsPath")) {
-            throw new IllegalArgumentException("HDFS path is missing in volume context.");
+        String location = volumeContext.get("location");
+        String secretName = volumeContext.get("secretName");
+        String secretNamespace = volumeContext.get("secretNamespace");
+        String authType = volumeContext.getOrDefault("auth", "simple");
+
+
+
+        //apiVersion: v1
+        //kind: PersistentVolume
+        //metadata:
+        //  annotations:
+        //    pv.kubernetes.io/provisioned-by: hdfs.csi.varga
+        //  name: hdfsexample
+        //spec:
+        //  capacity:
+        //    storage: 5Gi
+        //  accessModes:
+        //    - ReadWriteMany
+        //  persistentVolumeReclaimPolicy: Retain
+        //  storageClassName: ""
+        //  csi:
+        //    driver: hdfs.csi.varga
+        //    volumeHandle: "hdfs://xxx:9090/path"  # make sure this volumeid is unique for every identical share in the cluster
+        //    volumeAttributes:
+        //      auth: kerberos
+        //    nodeStageSecretRef:
+        //      name: hdfs-secret
+        //      namespace: expense
+
+        logger.info("Handling NodePublishVolume for Volume ID: {} at Target Path: {}", volumeId, targetPath);
+
+        HdfsConnection.createHdfsConnection()
+
+        "location", location);
+
+        // Add secrets used for provisioning (if applicable)
+        if (secretName != null && secretNamespace != null) {
+            volumeBuilder.putVolumeContext("secretName", secretName);
+            volumeBuilder.putVolumeContext("secretNamespace", secretNamespace);
         }
+
 
         try {
             Path path = Paths.get(targetPath);
