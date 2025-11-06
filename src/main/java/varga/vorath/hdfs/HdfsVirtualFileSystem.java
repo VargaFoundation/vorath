@@ -2,7 +2,6 @@ package varga.vorath.hdfs;
 
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -17,27 +16,20 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.net.URI;
 
 public class HdfsVirtualFileSystem extends FuseStubFS {
     private static final Logger logger = LoggerFactory.getLogger(HdfsVirtualFileSystem.class);
 
-    private FileSystem hdfs;
-    private final String hdfsUri;
-    private final String rootPath;
+    private FileSystem fileSystem;
+    private final URI hdfsUri;
 
-    public HdfsVirtualFileSystem(String hdfsUri, String rootPath) {
-        this.hdfsUri = hdfsUri;
-        this.rootPath = rootPath;
-        initializeHdfsClient();
-    }
-
-    private void initializeHdfsClient() {
+    public HdfsVirtualFileSystem(String hdfsUri, HdfsConnection hdfsConnection) {
         try {
-            Configuration config = new Configuration();
-            config.set("fs.defaultFS", hdfsUri);
-            this.hdfs = FileSystem.get(config);
-            logger.info("Connected to HDFS: {}", hdfsUri);
+            this.hdfsUri = URI.create(hdfsUri);
+
+            this.fileSystem = FileSystem.get(hdfsConnection.getConfiguration());
+            logger.info("Connected to HDFS: {}", this.hdfsUri);
         } catch (IOException e) {
             logger.error("Failed to connect to HDFS", e);
             throw new RuntimeException("HDFS connection failed", e);
@@ -55,7 +47,7 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
                 return 0;
             }
 
-            FileStatus fileStatus = hdfs.getFileStatus(hdfsPath);
+            FileStatus fileStatus = this.fileSystem.getFileStatus(hdfsPath);
             if (fileStatus.isDirectory()) {
                 stat.st_mode.set(FileStat.S_IFDIR | 0755); // It's a directory
             } else {
@@ -80,7 +72,7 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
             Path hdfsPath = getHdfsPath(path);
 
             // Vérification si le répertoire existe et est valide dans HDFS
-            if (!hdfs.exists(hdfsPath) || !hdfs.isDirectory(hdfsPath)) {
+            if (!this.fileSystem.exists(hdfsPath) || !this.fileSystem.isDirectory(hdfsPath)) {
                 return -2; // -ENOENT : Répertoire introuvable
             }
 
@@ -89,7 +81,7 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
             filter.apply(buf, "..", null, 0);
 
             // Récupération du contenu du répertoire HDFS
-            FileStatus[] fileStatuses = hdfs.listStatus(hdfsPath);
+            FileStatus[] fileStatuses = fileSystem.listStatus(hdfsPath);
             for (FileStatus file : fileStatuses) {
                 // Ajout de chaque fichier/répertoire au contenu du répertoire actuel
                 String fileName = file.getPath().getName();
@@ -119,12 +111,12 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
         try {
             Path hdfsPath = getHdfsPath(path);
 
-            if (!hdfs.exists(hdfsPath)) {
+            if (!this.fileSystem.exists(hdfsPath)) {
                 return -2; // -ENOENT (Not found)
             }
 
             // Open the file and read the requested portion
-            FSDataInputStream inputStream = hdfs.open(hdfsPath);
+            FSDataInputStream inputStream = fileSystem.open(hdfsPath);
             inputStream.seek(offset);
 
             byte[] bytes = new byte[(int) size];
@@ -146,10 +138,10 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
             Path hdfsPath = getHdfsPath(path);
 
             // Create the file in HDFS
-            if (hdfs.exists(hdfsPath)) {
+            if (this.fileSystem.exists(hdfsPath)) {
                 return -17; // -EEXIST (File already exists)
             }
-            hdfs.create(new Path(hdfsPath.toString())).close();
+            this.fileSystem.create(new Path(hdfsPath.toString())).close();
 
             logger.info("File created: {}", hdfsPath);
             return 0; // Success
@@ -169,8 +161,8 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
             // Write data at the specified offset using HDFS output streams
             FSDataInputStream existingData = null;
             ByteArrayOutputStream resultData = new ByteArrayOutputStream();
-            if (hdfs.exists(hdfsPath)) {
-                existingData = hdfs.open(hdfsPath);
+            if (this.fileSystem.exists(hdfsPath)) {
+                existingData = this.fileSystem.open(hdfsPath);
 
                 // Handle overwriting if offset is specified
                 byte[] oldData = new byte[(int) offset];
@@ -179,7 +171,7 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
             }
 
             resultData.write(data);
-            hdfs.create(hdfsPath, true).write(resultData.toByteArray());
+            this.fileSystem.create(hdfsPath, true).write(resultData.toByteArray());
 
             logger.info("Wrote {} bytes to file at path: {}", size, hdfsPath);
             return (int) size;
@@ -195,10 +187,10 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
         try {
             Path hdfsPath = getHdfsPath(path);
 
-            if (!hdfs.exists(hdfsPath)) {
+            if (!this.fileSystem.exists(hdfsPath)) {
                 return -2; // -ENOENT (File not found)
             }
-            if (!hdfs.delete(hdfsPath, false)) {
+            if (!this.fileSystem.delete(hdfsPath, false)) {
                 return -1; // Generic error if unable to delete
             }
 
@@ -215,10 +207,10 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
         try {
             Path hdfsPath = getHdfsPath(path);
 
-            if (hdfs.exists(hdfsPath)) {
+            if (this.fileSystem.exists(hdfsPath)) {
                 return -17; // -EEXIST (Directory already exists)
             }
-            if (!hdfs.mkdirs(hdfsPath)) {
+            if (!this.fileSystem.mkdirs(hdfsPath)) {
                 return -1; // Generic error if unable to create directory
             }
 
@@ -236,16 +228,16 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
         try {
             Path hdfsPath = getHdfsPath(path);
 
-            if (!hdfs.exists(hdfsPath) || !hdfs.isDirectory(hdfsPath)) {
+            if (!this.fileSystem.exists(hdfsPath) || !this.fileSystem.isDirectory(hdfsPath)) {
                 return -2; // -ENOENT (Directory not found or not a directory)
             }
 
-            FileStatus[] fileStatuses = hdfs.listStatus(hdfsPath);
+            FileStatus[] fileStatuses = fileSystem.listStatus(hdfsPath);
             if (fileStatuses.length > 0) {
                 return -39; // -ENOTEMPTY (Directory not empty)
             }
 
-            if (!hdfs.delete(hdfsPath, false)) {
+            if (!this.fileSystem.delete(hdfsPath, false)) {
                 return -1; // Generic error if unable to delete
             }
 
@@ -260,25 +252,6 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
     private Path getHdfsPath(String path) {
         // Adjust the path to map local FUSE paths to HDFS paths
         String normalizedPath = path.equals("/") ? "" : path;
-        return new Path(rootPath + normalizedPath);
-    }
-
-    public static void main(String[] args) {
-        if (args.length < 3) {
-            System.err.println("Usage: MyVirtualFileSystem <HDFS_URI> <HDFS_ROOT_PATH> <LOCAL_MOUNT_POINT>");
-            System.exit(1);
-        }
-
-        String hdfsUri = args[0];
-        String hdfsRootPath = args[1];
-        String localMountPoint = args[2];
-
-        HdfsVirtualFileSystem fileSystem = new HdfsVirtualFileSystem(hdfsUri, hdfsRootPath);
-
-        try {
-            fileSystem.mount(Paths.get(localMountPoint), true, false); // true -> debug mode
-        } finally {
-            fileSystem.umount();
-        }
+        return new Path(this.hdfsUri.getPath() + normalizedPath);
     }
 }

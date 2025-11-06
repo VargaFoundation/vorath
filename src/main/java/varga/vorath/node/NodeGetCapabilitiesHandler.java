@@ -49,14 +49,44 @@ public class NodeGetCapabilitiesHandler {
      * @return List of available capabilities.
      */
     private List<Csi.NodeServiceCapability> getNodeCapabilities() {
-        // Example capability: STAGE_UNSTAGE_VOLUME
+        List<Csi.NodeServiceCapability> capabilities = new ArrayList<>();
+
         Csi.NodeServiceCapability stageUnstageCapability = Csi.NodeServiceCapability.newBuilder()
                 .setRpc(Csi.NodeServiceCapability.RPC.newBuilder()
                         .setType(Csi.NodeServiceCapability.RPC.Type.STAGE_UNSTAGE_VOLUME)
                         .build())
                 .build();
+        capabilities.add(stageUnstageCapability);
 
-        // Return a single capability (add more as needed)
-        return Collections.singletonList(stageUnstageCapability);
+        Csi.NodeServiceCapability stageStageCapability = Csi.NodeServiceCapability.newBuilder()
+                .setRpc(Csi.NodeServiceCapability.RPC.newBuilder()
+                        .setType(Csi.NodeServiceCapability.RPC.Type.STAGE_STAGE_VOLUME)
+                        .build())
+                .build();
+        capabilities.add(stageStageCapability);
+
+        Csi.NodeServiceCapability getVolumeStatsCapability = Csi.NodeServiceCapability.newBuilder()
+                .setRpc(Csi.NodeServiceCapability.RPC.newBuilder()
+                        .setType(Csi.NodeServiceCapability.RPC.Type.GET_VOLUME_STATS)
+                        .build())
+                .build();
+        capabilities.add(getVolumeStatsCapability);
+
+        Csi.NodeServiceCapability getNodeInfo = Csi.NodeServiceCapability.newBuilder()
+                .setRpc(Csi.NodeServiceCapability.RPC.newBuilder()
+                        .setType(Csi.NodeServiceCapability.RPC.Type.GET_VOLUME_STATS)
+                        .build())
+                .build();
+        capabilities.add(getNodeInfo);
+
+
+
+        private static final int METHODID_NODE_STAGE_VOLUME = 0;
+        private static final int METHODID_NODE_UNSTAGE_VOLUME = 1;
+        private static final int METHODID_NODE_PUBLISH_VOLUME = 2;
+        private static final int METHODID_NODE_UNPUBLISH_VOLUME = 3;
+        private static final int METHODID_NODE_GET_VOLUME_STATS = 4;
+
+        return capabilities;
     }
 }
