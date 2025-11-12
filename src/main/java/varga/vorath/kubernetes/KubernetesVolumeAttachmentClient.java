@@ -8,6 +8,7 @@ import io.kubernetes.client.openapi.models.V1VolumeAttachment;
 import io.kubernetes.client.openapi.models.V1VolumeAttachmentList;
 import io.kubernetes.client.openapi.models.V1VolumeAttachmentSource;
 import io.kubernetes.client.util.ClientBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -20,10 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Component
 public class KubernetesVolumeAttachmentClient {
-
-    private static final Logger logger = LoggerFactory.getLogger(KubernetesVolumeAttachmentClient.class);
 
     private static final String CSI_ATTACHER_NAME = "hdfs-csi-driver";
     private final String currentNodeName;
@@ -47,7 +47,7 @@ public class KubernetesVolumeAttachmentClient {
      * @return A map of targetPath to VolumeAttachmentInfo for volumes that need to be mounted on the current node.
      */
     public Map<String, VolumeAttachmentInfo> getVolumeAttachmentsForCurrentNode() {
-        logger.info("Fetching VolumeAttachments for current node '{}' and CSI attacher '{}'", currentNodeName, CSI_ATTACHER_NAME);
+        log.info("Fetching VolumeAttachments for current node '{}' and CSI attacher '{}'", currentNodeName, CSI_ATTACHER_NAME);
 
         Map<String, VolumeAttachmentInfo> volumeAttachments = new HashMap<>();
         StorageV1Api storageApi = new StorageV1Api(apiClient);
@@ -87,7 +87,7 @@ public class KubernetesVolumeAttachmentClient {
                         Map<String, String> metadata = attachment.getStatus().getAttachmentMetadata();
 
                         if (pvName == null || metadata == null) {
-                            logger.warn("Skipping VolumeAttachment '{}' due to missing PV name or metadata.", attachment.getMetadata().getName());
+                            log.warn("Skipping VolumeAttachment '{}' due to missing PV name or metadata.", attachment.getMetadata().getName());
                             continue;
                         }
 
@@ -96,7 +96,7 @@ public class KubernetesVolumeAttachmentClient {
                         String hdfsUri = metadata.get("hdfsUri");
 
                         if (targetPath == null || hdfsUri == null) {
-                            logger.warn("Skipping VolumeAttachment '{}' due to missing mountPath or hdfsUri in metadata.", attachment.getMetadata().getName());
+                            log.warn("Skipping VolumeAttachment '{}' due to missing mountPath or hdfsUri in metadata.", attachment.getMetadata().getName());
                             continue;
                         }
 
@@ -104,16 +104,16 @@ public class KubernetesVolumeAttachmentClient {
                         volumeAttachments.put(targetPath, new VolumeAttachmentInfo(hdfsUri, hdfsConnection));
                     }
                 } catch (Exception e) {
-                    logger.error("Error processing VolumeAttachment '{}': {}", attachment.getMetadata().getName(), e.getMessage(), e);
+                    log.error("Error processing VolumeAttachment '{}': {}", attachment.getMetadata().getName(), e.getMessage(), e);
                 }
             }
 
         } catch (ApiException e) {
-            logger.error("Failed to fetch VolumeAttachments from Kubernetes API: {}", e.getResponseBody(), e);
+            log.error("Failed to fetch VolumeAttachments from Kubernetes API: {}", e.getResponseBody(), e);
             throw new RuntimeException("Error fetching VolumeAttachment resources", e);
         }
 
-        logger.info("Found {} VolumeAttachments for node '{}'", volumeAttachments.size(), currentNodeName);
+        log.info("Found {} VolumeAttachments for node '{}'", volumeAttachments.size(), currentNodeName);
         return volumeAttachments;
     }
 }

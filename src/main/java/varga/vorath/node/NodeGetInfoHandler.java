@@ -2,14 +2,14 @@ package varga.vorath.node;
 
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class NodeGetInfoHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(NodeGetInfoHandler.class);
 
     private final String nodeId; // Unique identifier for this Node
     private final int maxVolumesPerNode; // Maximum volumes attachable to this Node
@@ -27,7 +27,7 @@ public class NodeGetInfoHandler {
      */
     public void handleNodeGetInfo(Csi.NodeGetInfoRequest request, StreamObserver<Csi.NodeGetInfoResponse> responseObserver) {
         try {
-            logger.info("Processing NodeGetInfo request...");
+            log.info("Processing NodeGetInfo request...");
 
             // Construct the NodeGetInfo response
             Csi.NodeGetInfoResponse response = Csi.NodeGetInfoResponse.newBuilder()
@@ -38,10 +38,10 @@ public class NodeGetInfoHandler {
             // Send the response
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-            logger.info("NodeGetInfo response sent successfully. Node ID: {}, Max Volumes Per Node: {}", nodeId, maxVolumesPerNode);
+            log.info("NodeGetInfo response sent successfully. Node ID: {}, Max Volumes Per Node: {}", nodeId, maxVolumesPerNode);
 
         } catch (Exception e) {
-            logger.error("Error handling NodeGetInfo request: {}", e.getMessage(), e);
+            log.error("Error handling NodeGetInfo request: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

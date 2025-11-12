@@ -6,6 +6,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.util.ClientBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -13,10 +14,9 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class KubernetesVolumeService {
-
-    private static final Logger logger = LoggerFactory.getLogger(KubernetesVolumeService.class);
 
     private final CoreV1Api coreV1Api;
 
@@ -44,7 +44,7 @@ public class KubernetesVolumeService {
 
             return Optional.of(pvList.getItems().get(0)); // Assume volume IDs are unique for simplicity
         } catch (Exception e) {
-            logger.error("Error retrieving PersistentVolume with ID '{}': {}", volumeId, e.getMessage(), e);
+            log.error("Error retrieving PersistentVolume with ID '{}': {}", volumeId, e.getMessage(), e);
             return Optional.empty();
         }
     }
@@ -67,7 +67,7 @@ public class KubernetesVolumeService {
 
             return Optional.of(pvList.getItems().get(0));
         } catch (Exception e) {
-            logger.error("Error retrieving PersistentVolume with name '{}': {}", volumeName, e.getMessage(), e);
+            log.error("Error retrieving PersistentVolume with name '{}': {}", volumeName, e.getMessage(), e);
             return Optional.empty();
         }
     }

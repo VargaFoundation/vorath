@@ -2,6 +2,7 @@ package varga.vorath.hdfs;
 
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -18,8 +19,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 
+@Slf4j
 public class HdfsVirtualFileSystem extends FuseStubFS {
-    private static final Logger logger = LoggerFactory.getLogger(HdfsVirtualFileSystem.class);
 
     private FileSystem fileSystem;
     private final URI hdfsUri;
@@ -29,9 +30,9 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
             this.hdfsUri = URI.create(hdfsUri);
 
             this.fileSystem = FileSystem.get(hdfsConnection.getConfiguration());
-            logger.info("Connected to HDFS: {}", this.hdfsUri);
+            log.info("Connected to HDFS: {}", this.hdfsUri);
         } catch (IOException e) {
-            logger.error("Failed to connect to HDFS", e);
+            log.error("Failed to connect to HDFS", e);
             throw new RuntimeException("HDFS connection failed", e);
         }
     }
@@ -61,7 +62,7 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
         } catch (FileNotFoundException e) {
             return -2; // -ENOENT (Not found)
         } catch (IOException e) {
-            logger.error("Error getting attributes for path: {}", path, e);
+            log.error("Error getting attributes for path: {}", path, e);
             return -1; // Generic error
         }
     }
@@ -101,7 +102,7 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
 
             return 0; // Succès
         } catch (IOException e) {
-            logger.error("Erreur lors de la lecture du répertoire pour le chemin : {}", path, e);
+            log.error("Erreur lors de la lecture du répertoire pour le chemin : {}", path, e);
             return -1; // Erreur générique
         }
     }
@@ -127,7 +128,7 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
             }
             return 0; // EOF
         } catch (IOException e) {
-            logger.error("Error reading file for path: {}", path, e);
+            log.error("Error reading file for path: {}", path, e);
             return -1; // Generic error
         }
     }
@@ -143,10 +144,10 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
             }
             this.fileSystem.create(new Path(hdfsPath.toString())).close();
 
-            logger.info("File created: {}", hdfsPath);
+            log.info("File created: {}", hdfsPath);
             return 0; // Success
         } catch (IOException e) {
-            logger.error("Error creating file at path: {}", path, e);
+            log.error("Error creating file at path: {}", path, e);
             return -1; // Generic error
         }
     }
@@ -173,10 +174,10 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
             resultData.write(data);
             this.fileSystem.create(hdfsPath, true).write(resultData.toByteArray());
 
-            logger.info("Wrote {} bytes to file at path: {}", size, hdfsPath);
+            log.info("Wrote {} bytes to file at path: {}", size, hdfsPath);
             return (int) size;
         } catch (IOException e) {
-            logger.error("Error writing to file at path: {}", path, e);
+            log.error("Error writing to file at path: {}", path, e);
             return -1; // Generic error
         }
     }
@@ -194,10 +195,10 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
                 return -1; // Generic error if unable to delete
             }
 
-            logger.info("File deleted: {}", hdfsPath);
+            log.info("File deleted: {}", hdfsPath);
             return 0; // Success
         } catch (IOException e) {
-            logger.error("Error deleting file at path: {}", path, e);
+            log.error("Error deleting file at path: {}", path, e);
             return -1; // Generic error
         }
     }
@@ -214,10 +215,10 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
                 return -1; // Generic error if unable to create directory
             }
 
-            logger.info("Directory created: {}", hdfsPath);
+            log.info("Directory created: {}", hdfsPath);
             return 0; // Success
         } catch (IOException e) {
-            logger.error("Error creating directory at path: {}", path, e);
+            log.error("Error creating directory at path: {}", path, e);
             return -1; // Generic error
         }
     }
@@ -241,10 +242,10 @@ public class HdfsVirtualFileSystem extends FuseStubFS {
                 return -1; // Generic error if unable to delete
             }
 
-            logger.info("Directory deleted: {}", hdfsPath);
+            log.info("Directory deleted: {}", hdfsPath);
             return 0; // Success
         } catch (IOException e) {
-            logger.error("Error deleting directory at path: {}", path, e);
+            log.error("Error deleting directory at path: {}", path, e);
             return -1; // Generic error
         }
     }

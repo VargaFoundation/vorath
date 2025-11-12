@@ -4,8 +4,7 @@ import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import varga.vorath.Utils;
 import varga.vorath.hdfs.HdfsConnection;
@@ -17,9 +16,8 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DeleteVolumeRequestHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(DeleteVolumeRequestHandler.class);
 
     private final HdfsVolumeService hdfsVolumeService;
     private final KubernetesVolumeService kubernetesVolumeService;
@@ -65,11 +63,11 @@ public class DeleteVolumeRequestHandler {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
 
-            logger.info("Volume successfully deleted, ID: {}", volumeId);
+            log.info("Volume successfully deleted, ID: {}", volumeId);
 
         } catch (Exception e) {
             // Capture and log errors
-            logger.error("Error while deleting volume: {}", e.getMessage(), e);
+            log.error("Error while deleting volume: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

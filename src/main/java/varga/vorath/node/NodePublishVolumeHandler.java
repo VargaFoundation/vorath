@@ -4,6 +4,7 @@ import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -18,11 +19,10 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Base64;
 import java.util.Map;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class NodePublishVolumeHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(NodePublishVolumeHandler.class);
 
     private final HdfsMountService hdfsMountService;
 
@@ -75,14 +75,14 @@ public class NodePublishVolumeHandler {
         //      name: hdfs-secret
         //      namespace: expense
 
-        logger.info("Handling NodePublishVolume for Volume ID: {} at Target Path: {}", volumeId, targetPath);
+        log.info("Handling NodePublishVolume for Volume ID: {} at Target Path: {}", volumeId, targetPath);
 
         try {
             HdfsConnection hdfsConnection = HdfsConnection.createHdfsConnection(secretName, secretNamespace, Utils.extractClusterUri(location));
 
             Path path = Paths.get(targetPath);
             if (Files.exists(path)) {
-                logger.info("Target path '{}' already exists for volume '{}'. Assuming idempotent request.", targetPath, volumeId);
+                log.info("Target path '{}' already exists for volume '{}'. Assuming idempotent request.", targetPath, volumeId);
                 Csi.NodePublishVolumeResponse response = Csi.NodePublishVolumeResponse.newBuilder().build();
                 responseObserver.onNext(response);
                 responseObserver.onCompleted();
@@ -90,19 +90,19 @@ public class NodePublishVolumeHandler {
             }
 
             Files.createDirectories(path, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxr-xr-x")));
-            logger.info("Target directory created at path: {}", targetPath);
+            log.info("Target directory created at path: {}", targetPath);
 
             // Mount the volume with HDFS path
             this.hdfsMountService.mountVolume(hdfsConnection, hdfsPath, targetPath);
 
-            logger.info("Volume {} is successfully published to {}", volumeId, targetPath);
+            log.info("Volume {} is successfully published to {}", volumeId, targetPath);
 
             Csi.NodePublishVolumeResponse response = Csi.NodePublishVolumeResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
 
         } catch (Exception e) {
-            logger.error("Error while publishing volume {} to target path {}: {}", volumeId, targetPath, e.getMessage(), e);
+            log.error("Error while publishing volume {} to target path {}: {}", volumeId, targetPath, e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

@@ -2,14 +2,12 @@ package varga.vorath.controller;
 
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class GetCapacityHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(GetCapacityHandler.class);
 
     /**
      * Handles the GetCapacity request to return available capacity based on the parameters provided.
@@ -24,7 +22,7 @@ public class GetCapacityHandler {
                     request.getAccessibleTopology().toString() : "N/A";
             String volumeCapabilities = request.getVolumeCapabilitiesList().toString();
 
-            logger.info("Processing GetCapacity request with accessibleTopology: {}, volumeCapabilities: {}",
+            log.info("Processing GetCapacity request with accessibleTopology: {}, volumeCapabilities: {}",
                     accessibleTopology, volumeCapabilities);
 
             // Simulate capacity calculation based on the request parameters
@@ -38,10 +36,10 @@ public class GetCapacityHandler {
             // Send response to the client
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-            logger.info("GetCapacity completed successfully. Available capacity: {} bytes", availableCapacity);
+            log.info("GetCapacity completed successfully. Available capacity: {} bytes", availableCapacity);
 
         } catch (Exception e) {
-            logger.error("Error handling GetCapacity request: {}", e.getMessage(), e);
+            log.error("Error handling GetCapacity request: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

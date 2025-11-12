@@ -1,5 +1,6 @@
 package varga.vorath.hdfs;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -9,10 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
+@Slf4j
 @Service
 public class HdfsVolumeService {
-
-    private static final Logger logger = LoggerFactory.getLogger(HdfsVolumeService.class);
 
     /**
      * Resolve a FileSystem to operate on. If an HdfsConnection is provided, use its
@@ -39,7 +39,7 @@ public class HdfsVolumeService {
             throw new IllegalArgumentException("Volume already exists in HDFS: " + volumeName);
         }
         fs.mkdirs(volumePath);
-        logger.info("Volume '{}' successfully created at path: {}", volumeName, volumePath);
+        log.info("Volume '{}' successfully created at path: {}", volumeName, volumePath);
 
         // Use volume name as stable ID for now
         return volumeName;
@@ -63,9 +63,9 @@ public class HdfsVolumeService {
 
         if (fs.exists(volumePath)) {
             fs.delete(volumePath, true);
-            logger.info("HDFS path '{}' successfully deleted", volumePath);
+            log.info("HDFS path '{}' successfully deleted", volumePath);
         } else {
-            logger.warn("HDFS path '{}' does not exist; nothing to delete", volumePath);
+            log.warn("HDFS path '{}' does not exist; nothing to delete", volumePath);
         }
     }
 }

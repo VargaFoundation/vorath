@@ -1,7 +1,10 @@
 package varga.vorath;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.net.URI;
 
+@Slf4j
 public class Utils {
 
     // Extract cluster URI (scheme://authority) when a full HDFS path is provided; otherwise return null
@@ -14,7 +17,7 @@ public class Utils {
             }
             return null;
         } catch (Exception e) {
-            logger.warn("Failed to parse location '{}': {}", maybeFullPath, e.getMessage());
+            log.warn("Failed to parse location '{}': {}", maybeFullPath, e.getMessage());
             return null;
         }
     }

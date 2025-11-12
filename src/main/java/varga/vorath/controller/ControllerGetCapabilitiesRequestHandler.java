@@ -3,8 +3,7 @@ package varga.vorath.controller;
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -12,9 +11,8 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ControllerGetCapabilitiesRequestHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(ControllerGetCapabilitiesRequestHandler.class);
 
     /**
      * Handles the gRPC request to get the controller capabilities.
@@ -37,10 +35,10 @@ public class ControllerGetCapabilitiesRequestHandler {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
 
-            logger.info("Controller capabilities successfully sent.");
+            log.info("Controller capabilities successfully sent.");
         } catch (Exception e) {
             // Handle any errors and notify the client
-            logger.error("Error while retrieving controller capabilities: {}", e.getMessage(), e);
+            log.error("Error while retrieving controller capabilities: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }
@@ -80,7 +78,7 @@ public class ControllerGetCapabilitiesRequestHandler {
         // Add more capabilities as supported by your driver
         // For example: LIST_VOLUMES, CLONE_VOLUME, etc.
 
-        logger.debug("Controller capabilities prepared: {}", capabilities);
+        log.debug("Controller capabilities prepared: {}", capabilities);
         return capabilities;
     }
 }

@@ -2,17 +2,15 @@ package varga.vorath.controller;
 
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class ValidateVolumeCapabilitiesHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(ValidateVolumeCapabilitiesHandler.class);
 
     /**
      * Handles the ValidateVolumeCapabilities request to verify if the volume supports the requested capabilities.
@@ -26,8 +24,8 @@ public class ValidateVolumeCapabilitiesHandler {
         List<Csi.VolumeCapability> requestedCapabilities = request.getVolumeCapabilitiesList();
 
         try {
-            logger.info("Processing ValidateVolumeCapabilities request for volumeId: {}", volumeId);
-            logger.info("Requested Volume Capabilities: {}", requestedCapabilities);
+            log.info("Processing ValidateVolumeCapabilities request for volumeId: {}", volumeId);
+            log.info("Requested Volume Capabilities: {}", requestedCapabilities);
 
             // Validate the volume ID
             if (volumeId == null || volumeId.isEmpty()) {
@@ -49,11 +47,11 @@ public class ValidateVolumeCapabilitiesHandler {
                         .addAllVolumeCapabilities(requestedCapabilities)
                         .build()
                 );
-                logger.info("All requested capabilities are supported for volumeId: {}", volumeId);
+                log.info("All requested capabilities are supported for volumeId: {}", volumeId);
             } else {
-                logger.warn("Some requested capabilities are not supported for volumeId: {}", volumeId);
+                log.warn("Some requested capabilities are not supported for volumeId: {}", volumeId);
                 unsupportedCapabilities.forEach(capability ->
-                        logger.warn("Unsupported capability: {}", capability));
+                        log.warn("Unsupported capability: {}", capability));
             }
 
             // Send the response
@@ -61,7 +59,7 @@ public class ValidateVolumeCapabilitiesHandler {
             responseObserver.onCompleted();
 
         } catch (Exception e) {
-            logger.error("Error handling ValidateVolumeCapabilities for volumeId {}: {}", volumeId, e.getMessage(), e);
+            log.error("Error handling ValidateVolumeCapabilities for volumeId {}: {}", volumeId, e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

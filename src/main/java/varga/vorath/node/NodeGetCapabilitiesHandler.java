@@ -2,6 +2,7 @@ package varga.vorath.node;
 
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -9,10 +10,9 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 public class NodeGetCapabilitiesHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(NodeGetCapabilitiesHandler.class);
 
     /**
      * Handles the retrieval of node capabilities.
@@ -35,10 +35,10 @@ public class NodeGetCapabilitiesHandler {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
 
-            logger.info("Node capabilities successfully sent.");
+            log.info("Node capabilities successfully sent.");
         } catch (Exception e) {
             // Handle any error and notify the client
-            logger.error("Error while retrieving node capabilities: {}", e.getMessage(), e);
+            log.error("Error while retrieving node capabilities: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

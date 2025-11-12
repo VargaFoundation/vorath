@@ -3,21 +3,17 @@ package varga.vorath.controller;
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import varga.vorath.Utils;
 import varga.vorath.hdfs.HdfsConnection;
 import varga.vorath.hdfs.HdfsVolumeService;
 
-import java.net.URI;
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CreateVolumeRequestHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(CreateVolumeRequestHandler.class);
 
     private final HdfsVolumeService hdfsVolumeService;
 
@@ -33,7 +29,7 @@ public class CreateVolumeRequestHandler {
     public void handleCreateVolumeRequest(Csi.CreateVolumeRequest request,
                                           StreamObserver<Csi.CreateVolumeResponse> responseObserver) {
         try {
-            logger.info("Received CreateVolumeRequest for volume: {}", request.getName());
+            log.info("Received CreateVolumeRequest for volume: {}", request.getName());
 
             // Step 1: Validate the request
             validateCreateVolumeRequest(request);
@@ -80,7 +76,7 @@ public class CreateVolumeRequestHandler {
                     hdfsPath
             );
 
-            logger.info("Volume {} created successfully with ID: {}", volumeName, volumeId);
+            log.info("Volume {} created successfully with ID: {}", volumeName, volumeId);
 
             // Create the volume structure
             Csi.Volume.Builder volumeBuilder = Csi.Volume.newBuilder()
@@ -106,10 +102,10 @@ public class CreateVolumeRequestHandler {
             responseObserver.onCompleted();
 
         } catch (IllegalArgumentException e) {
-            logger.error("Invalid CreateVolumeRequest: {}", e.getMessage(), e);
+            log.error("Invalid CreateVolumeRequest: {}", e.getMessage(), e);
             responseObserver.onError(e);
         } catch (Exception e) {
-            logger.error("Error while creating volume: {}", e.getMessage(), e);
+            log.error("Error while creating volume: {}", e.getMessage(), e);
             responseObserver.onError(new RuntimeException("Failed to create volume."));
         }
     }
@@ -136,6 +132,6 @@ public class CreateVolumeRequestHandler {
             throw new IllegalArgumentException("CapacityRange.requiredBytes must be > 0 when provided.");
         }
 
-        logger.debug("CreateVolumeRequest validated successfully.");
+        log.debug("CreateVolumeRequest validated successfully.");
     }
 }

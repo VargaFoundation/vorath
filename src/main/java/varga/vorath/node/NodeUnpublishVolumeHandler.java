@@ -3,6 +3,7 @@ package varga.vorath.node;
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -12,11 +13,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class NodeUnpublishVolumeHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(NodeUnpublishVolumeHandler.class);
     private final HdfsMountService hdfsMountService;
 
     /**
@@ -36,13 +37,13 @@ public class NodeUnpublishVolumeHandler {
                 throw new IllegalArgumentException("Volume ID or Target Path is missing. Volume ID: " + volumeId + ", Target Path: " + targetPath);
             }
 
-            logger.info("Request received to unpublish volume. Volume ID: {}, Target Path: {}", volumeId, targetPath);
+            log.info("Request received to unpublish volume. Volume ID: {}, Target Path: {}", volumeId, targetPath);
 
             Path path = Paths.get(targetPath);
 
             // Check idempotency: If the path doesn't exist, no additional action is needed
             if (!Files.exists(path)) {
-                logger.warn("The target path '{}' does not exist. The volume is already unpublished or not mounted.", targetPath);
+                log.warn("The target path '{}' does not exist. The volume is already unpublished or not mounted.", targetPath);
                 Csi.NodeUnpublishVolumeResponse response = Csi.NodeUnpublishVolumeResponse.newBuilder().build();
                 responseObserver.onNext(response);
                 responseObserver.onCompleted();
@@ -57,12 +58,12 @@ public class NodeUnpublishVolumeHandler {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
 
-            logger.info("Volume '{}' successfully unpublished and target path '{}' cleaned up.", volumeId, targetPath);
+            log.info("Volume '{}' successfully unpublished and target path '{}' cleaned up.", volumeId, targetPath);
         } catch (IllegalArgumentException e) {
-            logger.error("Error in input parameters: {}", e.getMessage());
+            log.error("Error in input parameters: {}", e.getMessage());
             responseObserver.onError(e);
         } catch (Exception e) {
-            logger.error("Unexpected error while unpublishing the volume: {}", e.getMessage(), e);
+            log.error("Unexpected error while unpublishing the volume: {}", e.getMessage(), e);
             responseObserver.onError(new RuntimeException("Error while unpublishing the volume.", e));
         }
     }

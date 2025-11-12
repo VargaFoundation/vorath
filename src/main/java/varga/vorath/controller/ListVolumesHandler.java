@@ -2,17 +2,15 @@ package varga.vorath.controller;
 
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class ListVolumesHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(ListVolumesHandler.class);
 
     /**
      * Handles the ListVolumes request to return a paginated list of existing volumes.
@@ -23,7 +21,7 @@ public class ListVolumesHandler {
     public void handleListVolumes(Csi.ListVolumesRequest request,
                                   StreamObserver<Csi.ListVolumesResponse> responseObserver) {
         try {
-            logger.info("Processing ListVolumes request. StartingToken: {}, MaxEntries: {}",
+            log.info("Processing ListVolumes request. StartingToken: {}, MaxEntries: {}",
                     request.getStartingToken(), request.getMaxEntries());
 
             // Simulate retrieving volume information (this would normally come from a backend or database)
@@ -44,10 +42,10 @@ public class ListVolumesHandler {
             // Send response to the client
             responseObserver.onNext(responseBuilder.build());
             responseObserver.onCompleted();
-            logger.info("ListVolumes completed successfully. Returned volumes: {}", volumeEntries.size());
+            log.info("ListVolumes completed successfully. Returned volumes: {}", volumeEntries.size());
 
         } catch (Exception e) {
-            logger.error("Error handling ListVolumes request: {}", e.getMessage(), e);
+            log.error("Error handling ListVolumes request: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

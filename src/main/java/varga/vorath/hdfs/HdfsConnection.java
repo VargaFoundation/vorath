@@ -7,8 +7,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.util.Config;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,9 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 
+@Slf4j
 public class HdfsConnection {
-
-    private static final Logger logger = LoggerFactory.getLogger(HdfsConnection.class);
 
     private final Configuration configuration; // Isolated Hadoop configuration
     private final UserGroupInformation userGroupInformation; // Isolated authentication context
@@ -104,7 +102,7 @@ public class HdfsConnection {
         String coreSiteContent = new String(Base64.getDecoder().decode(secretData.get("core-site.xml")));
         String hdfsSiteContent = new String(Base64.getDecoder().decode(secretData.get("hdfs-site.xml")));
 
-        logger.info("Fetched secret data successfully: {}, {}, {}", keytabContent, coreSiteContent, hdfsSiteContent);
+        log.info("Fetched secret data successfully: {}, {}, {}", keytabContent, coreSiteContent, hdfsSiteContent);
         HdfsConnection hdfsConnection = new HdfsConnection(location, keytabContent, principal, coreSiteContent, hdfsSiteContent);
         return hdfsConnection;
     }
@@ -118,7 +116,7 @@ public class HdfsConnection {
      * @throws ApiException If there is an error interacting with the Kubernetes API.
      */
     private static Map<String, String> getSecret(String secretName, String secretNamespace) throws ApiException, IOException {
-        logger.info("Fetching secret '{}' from namespace '{}'", secretName, secretNamespace);
+        log.info("Fetching secret '{}' from namespace '{}'", secretName, secretNamespace);
 
         // Initialize Kubernetes API client
         ApiClient client = Config.defaultClient();

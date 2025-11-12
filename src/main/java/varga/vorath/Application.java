@@ -3,8 +3,7 @@ package varga.vorath;
 import io.grpc.Server;
 import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.unix.DomainSocketAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -17,10 +16,8 @@ import varga.vorath.node.NodeGrpcService;
 import java.io.File;
 
 @SpringBootApplication
+@Slf4j
 public class Application {
-
-    // Define the logger
-    private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
@@ -33,7 +30,7 @@ public class Application {
             String csiEndpoint = System.getenv("CSI_ENDPOINT");
 
             if (csiEndpoint == null || !csiEndpoint.startsWith("unix://")) {
-                logger.error("Invalid CSI_ENDPOINT: must use the 'unix://' scheme for file sockets");
+                log.error("Invalid CSI_ENDPOINT: must use the 'unix://' scheme for file sockets");
                 throw new IllegalArgumentException("CSI_ENDPOINT must use the 'unix://' scheme for file sockets");
             }
 
@@ -42,7 +39,7 @@ public class Application {
 
             // Ensure the socket file does not already exist
             if (socketFile.exists() && !socketFile.delete()) {
-                logger.error("Failed to delete existing socket: {}", socketPath);
+                log.error("Failed to delete existing socket: {}", socketPath);
                 return; // Exit the runner if the socket file cannot be removed
             }
 
@@ -53,20 +50,20 @@ public class Application {
                     .addService(applicationContext.getBean(NodeGrpcService.class))
                     .build();
 
-            logger.info("gRPC server started on Unix socket: {}", socketPath);
+            log.info("gRPC server started on Unix socket: {}", socketPath);
             server.start();
 
             // Add a shutdown hook to gracefully stop the server on JVM shutdown
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                logger.info("Shutdown initiated: attempting to stop gRPC server...");
+                log.info("Shutdown initiated: attempting to stop gRPC server...");
                 try {
                     if (server != null) {
                         server.shutdown();
                         server.awaitTermination();
-                        logger.info("gRPC server stopped successfully.");
+                        log.info("gRPC server stopped successfully.");
                     }
                 } catch (InterruptedException e) {
-                    logger.error("Error during server shutdown: {}", e.getMessage(), e);
+                    log.error("Error during server shutdown: {}", e.getMessage(), e);
                     Thread.currentThread().interrupt();
                 }
             }));

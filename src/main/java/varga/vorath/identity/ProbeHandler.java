@@ -3,15 +3,13 @@ package varga.vorath.identity;
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ProbeHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(ProbeHandler.class);
 
     /**
      * Handles the Probe request by constructing a standard response.
@@ -28,7 +26,7 @@ public class ProbeHandler {
 
         } catch (Exception e) {
             // Log the error and send the exception to the client.
-            logger.error("Error in handling Probe: {}", e.getMessage(), e);
+            log.error("Error in handling Probe: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

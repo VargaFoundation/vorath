@@ -3,16 +3,14 @@ package varga.vorath.identity;
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import varga.vorath.CsiPluginProperties;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class GetPluginInfoHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(GetPluginInfoHandler.class);
 
     private final CsiPluginProperties csiPluginProperties;
 
@@ -28,10 +26,10 @@ public class GetPluginInfoHandler {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
 
-            logger.info("GetPluginInfo request processed successfully.");
+            log.info("GetPluginInfo request processed successfully.");
 
         } catch (Exception e) {
-            logger.error("An error occurred while processing GetPluginInfo: {}", e.getMessage(), e);
+            log.error("An error occurred while processing GetPluginInfo: {}", e.getMessage(), e);
             responseObserver.onError(e);
         }
     }

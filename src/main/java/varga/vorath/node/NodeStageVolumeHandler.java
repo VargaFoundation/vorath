@@ -2,6 +2,7 @@ package varga.vorath.node;
 
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -10,10 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+@Slf4j
 @Component
 public class NodeStageVolumeHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(NodeStageVolumeHandler.class);
 
     /**
      * Handles the NodeStageVolume request to prepare a volume for use on this node.
@@ -26,13 +26,13 @@ public class NodeStageVolumeHandler {
         String stagingTargetPath = request.getStagingTargetPath();
 
         try {
-            logger.info("Processing NodeStageVolume request for volumeId: {}, stagingTargetPath: {}", volumeId, stagingTargetPath);
+            log.info("Processing NodeStageVolume request for volumeId: {}, stagingTargetPath: {}", volumeId, stagingTargetPath);
 
             // Example check: Ensure the staging target path exists or create it
             Path targetPath = Paths.get(stagingTargetPath);
             if (!Files.exists(targetPath)) {
                 Files.createDirectories(targetPath);
-                logger.info("Created staging target path: {}", stagingTargetPath);
+                log.info("Created staging target path: {}", stagingTargetPath);
             }
 
             // Simulate logic for "staging" the volume (e.g., mount or prepare volume)
@@ -42,10 +42,10 @@ public class NodeStageVolumeHandler {
             Csi.NodeStageVolumeResponse response = Csi.NodeStageVolumeResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-            logger.info("NodeStageVolume successfully completed for volumeId: {}", volumeId);
+            log.info("NodeStageVolume successfully completed for volumeId: {}", volumeId);
 
         } catch (Exception e) {
-            logger.error("Error handling NodeStageVolume for volumeId: {}: {}", volumeId, e.getMessage(), e);
+            log.error("Error handling NodeStageVolume for volumeId: {}: {}", volumeId, e.getMessage(), e);
             responseObserver.onError(e);
         }
     }
@@ -59,7 +59,7 @@ public class NodeStageVolumeHandler {
      */
     private void stageVolume(String volumeId, Path targetPath) throws Exception {
         // Example logic: You can replace this with actual mounting or preparation logic
-        logger.info("Staging volumeId: {} at path: {}", volumeId, targetPath.toString());
+        log.info("Staging volumeId: {} at path: {}", volumeId, targetPath.toString());
 
         // For example, if dealing with HDFS, you might set up mount points with FUSE or other tools
         // This is a placeholder for volume staging

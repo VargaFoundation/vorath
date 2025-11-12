@@ -5,8 +5,10 @@ import csi.v1.Csi;
 import csi.v1.IdentityGrpc;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class IdentityGrpcService extends IdentityGrpc.IdentityImplBase {
