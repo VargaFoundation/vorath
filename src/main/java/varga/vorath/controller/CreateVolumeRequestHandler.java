@@ -2,22 +2,16 @@ package varga.vorath.controller;
 
 import csi.v1.Csi;
 import io.grpc.stub.StreamObserver;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.util.Config;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import varga.vorath.Utils;
 import varga.vorath.hdfs.HdfsConnection;
 import varga.vorath.hdfs.HdfsVolumeService;
 
-import java.io.IOException;
-import java.util.Base64;
-import java.util.Map;
+import java.net.URI;
 
 @Component
 @RequiredArgsConstructor
@@ -26,6 +20,9 @@ public class CreateVolumeRequestHandler {
     private static final Logger logger = LoggerFactory.getLogger(CreateVolumeRequestHandler.class);
 
     private final HdfsVolumeService hdfsVolumeService;
+
+    @Value("${csi.storage.basePath:/volumes}")
+    private String defaultBasePath;
 
     /**
      * Handles the CreateVolume gRPC request.
@@ -43,7 +40,7 @@ public class CreateVolumeRequestHandler {
 
             // Step 2: Extract necessary details from the request
             String volumeName = request.getName();
-            long requiredCapacity = request.getCapacityRange().getRequiredBytes();
+            long requiredCapacity = request.hasCapacityRange() ? request.getCapacityRange().getRequiredBytes() : 0L;
 
             // Ex:
             //apiVersion: storage.k8s.io/v1
@@ -62,31 +59,36 @@ public class CreateVolumeRequestHandler {
             //  - --file-cache-timeout-in-seconds=120
             //  - --use-attr-cache=true
 
-            String location = request.getParametersMap().get("location");
+            String location = request.getParametersMap().get("location"); // optional path (full HDFS path)
             String secretName = request.getParametersMap().get("secretName");
             String secretNamespace = request.getParametersMap().get("secretNamespace");
 
-            HdfsConnection hdfsConnection = HdfsConnection.createHdfsConnection(secretName, secretNamespace, location);
-            hdfsConnection.getConfiguration();
+            // Secrets are mandatory according to requirements
+            HdfsConnection hdfsConnection = HdfsConnection.createHdfsConnection(secretName, secretNamespace, Utils.extractClusterUri(location));
 
+            // Compute the HDFS path to create (volumeId)
+            String hdfsPath;
+            if (location != null && !location.isEmpty()) {
+                hdfsPath = location; // location used directly as the volume path
+            } else {
+                hdfsPath = Utils.normalizePath(this.defaultBasePath) + "/" + volumeName;
+            }
 
             // Step 3: Create the volume in the backend
             String volumeId = this.hdfsVolumeService.createVolume(
-                    volumeName
-//                    ,
-//                    requiredCapacity,
-//                    storageClass,
-//                    volumeType
+                    hdfsConnection,
+                    hdfsPath
             );
 
             logger.info("Volume {} created successfully with ID: {}", volumeName, volumeId);
 
             // Create the volume structure
             Csi.Volume.Builder volumeBuilder = Csi.Volume.newBuilder()
-                    .setVolumeId(volumeId) // The globally unique volume ID
+                    .setVolumeId(hdfsPath) // Return HDFS path as the Volume ID
                     .setCapacityBytes(requiredCapacity) // Reported capacity of the volume
                     .putVolumeContext("provisioner", "hdfs.csi.varga")
-                    .putVolumeContext("location", location);
+                    .putVolumeContext("location", location == null ? "" : location)
+                    .putVolumeContext("hdfsPath", hdfsPath);
 
             // Add secrets used for provisioning (if applicable)
             if (secretName != null && secretNamespace != null) {
@@ -122,12 +124,16 @@ public class CreateVolumeRequestHandler {
         if (request.getName() == null || request.getName().isEmpty()) {
             throw new IllegalArgumentException("Volume name is required.");
         }
-        if (!request.getParametersMap().containsKey("location")) {
-            throw new IllegalArgumentException("location parameter is required.");
+        // location is optional; if provided, it must not be empty
+        if (request.getParametersMap().containsKey("location") && request.getParametersMap().get("location").isEmpty()) {
+            throw new IllegalArgumentException("location cannot be empty when provided.");
         }
-        if (!request.getParametersMap().containsKey("secretName") ||
-                !request.getParametersMap().containsKey("secretNamespace")) {
-            throw new IllegalArgumentException("Both secretName and secretNamespace must be provided.");
+        // Secrets are mandatory
+        if (!request.getParametersMap().containsKey("secretName") || !request.getParametersMap().containsKey("secretNamespace")) {
+            throw new IllegalArgumentException("secretName and secretNamespace are required.");
+        }
+        if (request.hasCapacityRange() && request.getCapacityRange().getRequiredBytes() <= 0) {
+            throw new IllegalArgumentException("CapacityRange.requiredBytes must be > 0 when provided.");
         }
 
         logger.debug("CreateVolumeRequest validated successfully.");

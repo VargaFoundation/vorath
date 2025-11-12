@@ -6,10 +6,13 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.StorageV1Api;
 import io.kubernetes.client.openapi.models.V1VolumeAttachment;
 import io.kubernetes.client.openapi.models.V1VolumeAttachmentList;
+import io.kubernetes.client.openapi.models.V1VolumeAttachmentSource;
 import io.kubernetes.client.util.ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import varga.vorath.Utils;
+import varga.vorath.hdfs.HdfsConnection;
 import varga.vorath.hdfs.VolumeAttachmentInfo;
 
 import java.io.IOException;
@@ -70,6 +73,14 @@ public class KubernetesVolumeAttachmentClient {
                 try {
                     String attacher = attachment.getSpec().getAttacher();
                     String nodeName = attachment.getSpec().getNodeName();
+                    V1VolumeAttachmentSource source = attachment.getSpec().getSource();
+
+                    String location = source.getInlineVolumeSpec().getCsi().getVolumeAttributes().get("location"); // optional path (full HDFS path)
+                    String secretName = source.getInlineVolumeSpec().getCsi().getVolumeAttributes().get("secretName");
+                    String secretNamespace = source.getInlineVolumeSpec().getCsi().getVolumeAttributes().get("secretNamespace");
+
+                    // Secrets are mandatory according to requirements
+                    HdfsConnection hdfsConnection = HdfsConnection.createHdfsConnection(secretName, secretNamespace, Utils.extractClusterUri(location));
 
                     if (attacher.equals(CSI_ATTACHER_NAME) && nodeName.equals(currentNodeName)) {
                         String pvName = attachment.getSpec().getSource().getPersistentVolumeName();
@@ -90,7 +101,7 @@ public class KubernetesVolumeAttachmentClient {
                         }
 
                         // Add to result map
-                        volumeAttachments.put(targetPath, new VolumeAttachmentInfo(hdfsUri));
+                        volumeAttachments.put(targetPath, new VolumeAttachmentInfo(hdfsUri, hdfsConnection));
                     }
                 } catch (Exception e) {
                     logger.error("Error processing VolumeAttachment '{}': {}", attachment.getMetadata().getName(), e.getMessage(), e);

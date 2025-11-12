@@ -1,13 +1,12 @@
 package varga.vorath.hdfs;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor
 public class VolumeAttachmentInfo {
     private final String hdfsUri;
-
-    public VolumeAttachmentInfo(String hdfsUri) {
-        this.hdfsUri = hdfsUri;
-    }
+    private final HdfsConnection hdfsConnection;
 
 }

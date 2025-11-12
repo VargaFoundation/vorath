@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import varga.vorath.kubernetes.KubernetesVolumeAttachmentClient;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,7 +43,7 @@ public class HdfsMountService {
                     // Mount volumes for any missing target paths
                     logger.info("Target path '{}' is missing. Attempting to mount...", targetPath);
                     try {
-                        mountVolume(attachmentInfo.getHdfsUri(), targetPath);
+                        mountVolume(attachmentInfo.getHdfsConnection(), attachmentInfo.getHdfsUri(), targetPath);
                     } catch (Exception e) {
                         logger.error("Failed to mount volume for target path '{}': {}", targetPath, e.getMessage(), e);
                     }
@@ -67,7 +67,7 @@ public class HdfsMountService {
      * @param hdfsUri    The HDFS URI (e.g., hdfs://localhost:8020/path).
      * @param targetPath The local target path where the volume should be mounted.
      */
-    public void mountVolume(String hdfsUri, String targetPath) {
+    public void mountVolume(HdfsConnection hdfsConnection, String hdfsUri, String targetPath) {
         logger.info("Mounting HDFS volume '{}' to local path '{}'", hdfsUri, targetPath);
 
         Path target = Paths.get(targetPath);
@@ -77,7 +77,7 @@ public class HdfsMountService {
         }
 
         // Create and mount with a new HdfsVirtualFileSystem instance
-        HdfsVirtualFileSystem hdfsVirtualFileSystem = new HdfsVirtualFileSystem(hdfsUri);
+        HdfsVirtualFileSystem hdfsVirtualFileSystem = new HdfsVirtualFileSystem(hdfsUri, hdfsConnection);
         try {
             hdfsVirtualFileSystem.mount(target, false, true);
             this.hdfsVfsInstances.put(targetPath, hdfsVirtualFileSystem); // Track the instance

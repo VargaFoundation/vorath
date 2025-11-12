@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import varga.vorath.Utils;
 import varga.vorath.hdfs.HdfsConnection;
 import varga.vorath.hdfs.HdfsMountService;
 
@@ -49,9 +50,8 @@ public class NodePublishVolumeHandler {
         String location = volumeContext.get("location");
         String secretName = volumeContext.get("secretName");
         String secretNamespace = volumeContext.get("secretNamespace");
-        String authType = volumeContext.getOrDefault("auth", "simple");
 
-
+        String hdfsPath = request.getVolumeContextMap().get("hdfsPath");
 
         //apiVersion: v1
         //kind: PersistentVolume
@@ -77,18 +77,9 @@ public class NodePublishVolumeHandler {
 
         logger.info("Handling NodePublishVolume for Volume ID: {} at Target Path: {}", volumeId, targetPath);
 
-        HdfsConnection.createHdfsConnection()
-
-        "location", location);
-
-        // Add secrets used for provisioning (if applicable)
-        if (secretName != null && secretNamespace != null) {
-            volumeBuilder.putVolumeContext("secretName", secretName);
-            volumeBuilder.putVolumeContext("secretNamespace", secretNamespace);
-        }
-
-
         try {
+            HdfsConnection hdfsConnection = HdfsConnection.createHdfsConnection(secretName, secretNamespace, Utils.extractClusterUri(location));
+
             Path path = Paths.get(targetPath);
             if (Files.exists(path)) {
                 logger.info("Target path '{}' already exists for volume '{}'. Assuming idempotent request.", targetPath, volumeId);
@@ -102,7 +93,7 @@ public class NodePublishVolumeHandler {
             logger.info("Target directory created at path: {}", targetPath);
 
             // Mount the volume with HDFS path
-            this.hdfsMountService.mountVolume(hdfsPath, targetPath);
+            this.hdfsMountService.mountVolume(hdfsConnection, hdfsPath, targetPath);
 
             logger.info("Volume {} is successfully published to {}", volumeId, targetPath);
 

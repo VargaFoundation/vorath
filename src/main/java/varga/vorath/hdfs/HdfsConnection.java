@@ -50,7 +50,9 @@ public class HdfsConnection {
             this.configuration.addResource(hdfsSiteStream);
         }
 
-        this.configuration.set("fs.defaultFS", hdfsUri); // Configure cluster URI
+        if (hdfsUri != null && !hdfsUri.isEmpty()) {
+            this.configuration.set("fs.defaultFS", hdfsUri); // Configure cluster URI when provided
+        }
 
         // Step 2: Set up Kerberos authentication
         this.configuration.set("hadoop.security.authentication", "kerberos"); // Enable Kerberos in local config

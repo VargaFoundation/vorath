@@ -7,9 +7,12 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import varga.vorath.Utils;
+import varga.vorath.hdfs.HdfsConnection;
 import varga.vorath.hdfs.HdfsVolumeService;
 import varga.vorath.kubernetes.KubernetesVolumeService;
 
+import java.net.URI;
 import java.util.Optional;
 
 @Component
@@ -32,7 +35,7 @@ public class DeleteVolumeRequestHandler {
             }
 
             // Fetch the PersistentVolume from Kubernetes
-            Optional<V1PersistentVolume> persistentVolumeOpt = kubernetesVolumeService.getPersistentVolumeById(volumeId);
+            Optional<V1PersistentVolume> persistentVolumeOpt = this.kubernetesVolumeService.getPersistentVolumeById(volumeId);
 
             if (persistentVolumeOpt.isEmpty()) {
                 throw new IllegalArgumentException("Volume ID not found in Kubernetes: " + volumeId);
@@ -47,7 +50,15 @@ public class DeleteVolumeRequestHandler {
                 throw new IllegalArgumentException("HDFS path is missing in volume context!");
             }
 
-            hdfsVolumeService.deleteVolume(hdfsPath);
+            String location = persistentVolume.getSpec().getCsi().getVolumeAttributes().get("location"); // optional path (full HDFS path)
+            String secretName = persistentVolume.getSpec().getCsi().getVolumeAttributes().get("secretName");
+            String secretNamespace = persistentVolume.getSpec().getCsi().getVolumeAttributes().get("secretNamespace");
+
+            // Secrets are mandatory according to requirements
+            HdfsConnection hdfsConnection = HdfsConnection.createHdfsConnection(secretName, secretNamespace, Utils.extractClusterUri(location));
+
+            // For deletion, we can operate without rebuilding an HDFS connection since we delete by path
+            this.hdfsVolumeService.deleteVolume(hdfsConnection, hdfsPath);
 
             // Send deletion confirmation to the client
             Csi.DeleteVolumeResponse response = Csi.DeleteVolumeResponse.newBuilder().build();
@@ -62,4 +73,5 @@ public class DeleteVolumeRequestHandler {
             responseObserver.onError(e);
         }
     }
+
 }
