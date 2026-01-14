@@ -191,3 +191,18 @@ hdfs-csi-plugin/
 
 By following this guide, you'll be able to build, test, and deploy the HDFS CSI plugin efficiently across different
 environments. If you encounter any issues, feel free to reach out or open an issue. 🚀
+
+
+#### License
+
+##### Update third parties license file
+
+Update the content of the file NOTICE:
+
+    mvn org.codehaus.mojo:license-maven-plugin:add-third-party@add-third-party
+
+##### Update license header on files
+
+Update license header on files
+
+    mvn org.codehaus.mojo:license-maven-plugin:update-file-header@update-file-header
