@@ -117,12 +117,16 @@ public class HdfsConnection {
         Map<String, String> secretData = getSecret(secretName, secretNamespace);
 
         // Extract required fields from the secret
-        String principal = new String(Base64.getDecoder().decode(secretData.get("principal")));
-        String keytabContent = new String(Base64.getDecoder().decode(secretData.get("keytab")));
-        String coreSiteContent = new String(Base64.getDecoder().decode(secretData.get("core-site.xml")));
-        String hdfsSiteContent = new String(Base64.getDecoder().decode(secretData.get("hdfs-site.xml")));
+        String principal = secretData.get("principal");
+        String keytabContent = secretData.get("keytab");
+        String coreSiteContent = secretData.get("core-site.xml");
+        String hdfsSiteContent = secretData.get("hdfs-site.xml");
 
-        log.info("Fetched secret data successfully: {}, {}, {}", keytabContent, coreSiteContent, hdfsSiteContent);
+        if (principal == null || keytabContent == null || coreSiteContent == null || hdfsSiteContent == null) {
+            throw new IOException("Secret is missing required fields: principal, keytab, core-site.xml, or hdfs-site.xml");
+        }
+
+        log.info("Fetched secret data successfully for principal: {}", principal);
         HdfsConnection hdfsConnection = new HdfsConnection(location, keytabContent, principal, coreSiteContent, hdfsSiteContent);
         return hdfsConnection;
     }
@@ -145,7 +149,16 @@ public class HdfsConnection {
         // Get the secret
         V1Secret secret = api.readNamespacedSecret(secretName, secretNamespace, null);
 
+        Map<String, byte[]> data = secret.getData();
+        if (data == null) {
+            throw new IOException("Secret '" + secretName + "' in namespace '" + secretNamespace + "' has no data");
+        }
+
         // Return the decoded secret data.
-        return secret.getStringData(); // This returns base64-encoded data entries
+        return data.entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> new String(e.getValue(), StandardCharsets.UTF_8)
+                ));
     }
 }

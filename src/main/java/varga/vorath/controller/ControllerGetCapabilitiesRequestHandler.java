@@ -79,21 +79,21 @@ public class ControllerGetCapabilitiesRequestHandler {
                 .build();
         capabilities.add(createDeleteVolumeCapability);
 
-        // Capability 2: Publish and unpublish volumes
-        Csi.ControllerServiceCapability publishUnpublishVolumeCapability = Csi.ControllerServiceCapability.newBuilder()
+        // Capability 2: List volumes
+        Csi.ControllerServiceCapability listVolumesCapability = Csi.ControllerServiceCapability.newBuilder()
                 .setRpc(Csi.ControllerServiceCapability.RPC.newBuilder()
-                        .setType(Csi.ControllerServiceCapability.RPC.Type.PUBLISH_UNPUBLISH_VOLUME)
+                        .setType(Csi.ControllerServiceCapability.RPC.Type.LIST_VOLUMES)
                         .build())
                 .build();
-        capabilities.add(publishUnpublishVolumeCapability);
+        capabilities.add(listVolumesCapability);
 
-        // Capability 3: Expand volumes (if your driver supports it)
-        Csi.ControllerServiceCapability expandVolumeCapability = Csi.ControllerServiceCapability.newBuilder()
+        // Capability 3: Get capacity
+        Csi.ControllerServiceCapability getCapacityCapability = Csi.ControllerServiceCapability.newBuilder()
                 .setRpc(Csi.ControllerServiceCapability.RPC.newBuilder()
-                        .setType(Csi.ControllerServiceCapability.RPC.Type.EXPAND_VOLUME)
+                        .setType(Csi.ControllerServiceCapability.RPC.Type.GET_CAPACITY)
                         .build())
                 .build();
-        capabilities.add(expandVolumeCapability);
+        capabilities.add(getCapacityCapability);
 
         // Add more capabilities as supported by your driver
         // For example: LIST_VOLUMES, CLONE_VOLUME, etc.

@@ -85,13 +85,6 @@ public class NodeGetCapabilitiesHandler {
                 .build();
         capabilities.add(getVolumeStatsCapability);
 
-        Csi.NodeServiceCapability getNodeInfo = Csi.NodeServiceCapability.newBuilder()
-                .setRpc(Csi.NodeServiceCapability.RPC.newBuilder()
-                        .setType(Csi.NodeServiceCapability.RPC.Type.GET_VOLUME_STATS)
-                        .build())
-                .build();
-        capabilities.add(getNodeInfo);
-
 
         //private static final int METHODID_NODE_STAGE_VOLUME = 0;
         //private static final int METHODID_NODE_UNSTAGE_VOLUME = 1;

@@ -54,7 +54,13 @@ public class HdfsVolumeService {
      */
     public String createVolume(HdfsConnection hdfsConnection, String volumeName) throws IOException {
         FileSystem fs = resolveFileSystem(hdfsConnection);
-        Path volumePath = new Path("/volumes/" + volumeName);
+        Path volumePath;
+        if (volumeName.startsWith("/") || volumeName.contains(":")) {
+            volumePath = new Path(volumeName);
+        } else {
+            volumePath = new Path("/volumes/" + volumeName);
+        }
+        
         if (fs.exists(volumePath)) {
             throw new IllegalArgumentException("Volume already exists in HDFS: " + volumeName);
         }

@@ -71,7 +71,12 @@ public class NodePublishVolumeHandler {
         String secretName = volumeContext.get("secretName");
         String secretNamespace = volumeContext.get("secretNamespace");
 
-        String hdfsPath = request.getVolumeContextMap().get("hdfsPath");
+        if (location == null || secretName == null || secretNamespace == null) {
+            log.error("Missing volume attributes in volumeContext: location, secretName, or secretNamespace. Context: {}", volumeContext);
+            throw new IllegalArgumentException("Missing required volume attributes: location, secretName, or secretNamespace");
+        }
+
+        String hdfsPath = volumeContext.getOrDefault("hdfsPath", "/");
 
         //apiVersion: v1
         //kind: PersistentVolume
