@@ -73,81 +73,86 @@ export HDFS_URL=hdfs://namenode:8020
 export HDFS_USER=hdfs_user
 ```
 
-### Build and Push the Docker Image
+### Docker
 
-If deploying to Kubernetes, the application needs to be containerized. Use the provided `Dockerfile` to create an image.
+The Docker image is automatically built and pushed to GitHub Container Registry via GitHub Actions on every push to `main`:
 
-1. **Build the Docker image:**
-
-``` bash
-   docker build -t your-docker-repo/hdfs-csi-plugin:latest .
+```bash
+docker pull ghcr.io/varga-foundation/vorath:latest
 ```
 
-1. **Push the image to your container registry:**
+To build manually:
 
-``` bash
-   docker push your-docker-repo/hdfs-csi-plugin:latest
+```bash
+docker build -t vorath:latest .
 ```
 
 ### Deploy to Kubernetes using Helm
 
-The Helm chart in this repository makes it easy to deploy the CSI plugin to any Kubernetes cluster. Follow the
-instructions below to deploy it.
+The Helm chart is available on GitHub Container Registry (OCI) and can be installed directly.
 
-#### Step 1: Update Helm Values (Optional)
+#### Install from the OCI registry
 
-The default configuration for the Helm chart is stored in `values.yaml`. You can override these values at install time
-or update the `values.yaml` file directly.
-Example `values.yaml` overrides:
+```bash
+helm install vorath oci://ghcr.io/varga-foundation/charts/hdfs-csi-plugin --version 1.0.0 \
+  --namespace vorath --create-namespace
+```
 
-``` yaml
+#### Install from local sources
+
+```bash
+helm install vorath ./kubernetes -n vorath --create-namespace
+```
+
+#### Configuration
+
+Override values at install time or create a `values.override.yaml`:
+
+```yaml
 hdfs:
-  url: "hdfs://your-hdfs-url:8020"
-  user: "your-hdfs-user"
+  url: "hdfs://namenode:8020"
+  user: "hdfs_csi"
 
 image:
-  repository: your-docker-repo/hdfs-csi-plugin
+  repository: ghcr.io/varga-foundation/vorath
   tag: latest
 ```
 
-#### Step 2: Install the Chart
-
-To deploy the application to your Kubernetes cluster, run the following command:
-
-``` bash
-helm upgrade --install hdfs-csi-plugin ./hdfs-csi-plugin --namespace default
+```bash
+helm install vorath oci://ghcr.io/varga-foundation/charts/hdfs-csi-plugin --version 1.0.0 \
+  -f values.override.yaml -n vorath --create-namespace
 ```
 
-- `hdfs-csi-plugin`: The release name.
-- `./hdfs-csi-plugin`: Path to the Helm chart (replace with the appropriate path).
+This deploys the following resources:
 
-This command deploys the following resources in Kubernetes:
+- A `ConfigMap` for the HDFS configuration.
+- A `DaemonSet` for the CSI plugin pods.
+- A `Service` for the plugin.
+- A `CSIDriver` registration.
+- RBAC resources (ClusterRole, ClusterRoleBinding, ServiceAccount).
 
-- A for the HDFS configuration. `ConfigMap`
-- A `Deployment` for the CSI plugin pods.
-- A `Service` (optional) for exposing the plugin.
+#### Verify the Deployment
 
-#### Step 3: Verify the Deployment
-
-Check if the pod is running successfully:
-
-``` bash
-kubectl get pods -n default
+```bash
+kubectl get pods -n vorath
+kubectl get csidrivers.storage.k8s.io
+kubectl logs -l app=hdfs-csi-plugin -n vorath
 ```
 
-For log output, use:
+#### Uninstall
 
-``` bash
-kubectl logs <pod-name> -n default
+```bash
+helm uninstall vorath -n vorath
 ```
 
-### Uninstall the Helm Release
+### CI/CD
 
-To remove the deployment from Kubernetes, run:
+GitHub Actions automatically:
+1. Builds the Maven project and runs tests.
+2. Builds and pushes the Docker image to `ghcr.io/varga-foundation/vorath`.
+3. Packages and pushes the Helm chart to `oci://ghcr.io/varga-foundation/charts/hdfs-csi-plugin`.
 
-``` bash
-helm uninstall hdfs-csi-plugin --namespace default
-```
+Triggers: push/PR to `main`/`master`, or manual dispatch.
 
 ### Testing the Deployment
 
